@@ -1,6 +1,7 @@
 import { InferGetStaticPropsType } from 'next'
 
 type Post = {
+  id: number,
   title: string
 }
 
@@ -8,7 +9,7 @@ function Blog({ posts }: InferGetStaticPropsType<typeof getStaticProps>) {
   return (
     <ul>
       {posts.map((post) => (
-        <li>{post.title}</li>
+        <li>{post.id} {post.title}</li>
       ))}
     </ul>
   )
@@ -17,9 +18,9 @@ function Blog({ posts }: InferGetStaticPropsType<typeof getStaticProps>) {
 export async function getStaticProps() {
 
   const posts: Post[] = [
-    { title: "hello" },
-    { title: "hello2" },
-    { title: "hello3" },
+    { id: 1, title: "hello" },
+    { id: 2, title: "hello2" },
+    { id: 3, title: "hello3" },
   ]
 
   return {

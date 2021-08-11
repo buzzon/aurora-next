@@ -1,5 +1,6 @@
 import Head from 'next/head'
 import styles from '../styles/Home.module.css'
+import Link from 'next/link'
 
 function Home() {
   return (
@@ -12,6 +13,11 @@ function Home() {
       <main className={styles.main}>
         <h1 className={styles.title}>
           Welcome to Aurora
+        </h1>
+        <h1>
+          <Link href="/calendar">
+            <a>Calendar</a>
+          </Link>
         </h1>
       </main>
     </div>
