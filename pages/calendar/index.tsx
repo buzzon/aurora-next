@@ -14,20 +14,20 @@ function CalendarPage() {
     switch (value.date()) {
       case 8:
         listData = [
-          { type: 'orange', content: 'This is warning event.' },
-          { type: 'blue', content: 'This is usual event.' },
+          { id: 1, type: 'orange', content: 'This is warning event.' },
+          { id: 2, type: 'blue', content: 'This is usual event.' },
         ];
         break;
       case 10:
         listData = [
-          { type: 'blue', content: 'This is warning event.' },
-          { type: 'orange', content: 'This is usual event.' },
-          { type: 'green', content: 'This is error event.' },
+          { id: 3, type: 'blue', content: 'This is warning event.' },
+          { id: 4, type: 'orange', content: 'This is usual event.' },
+          { id: 5, type: 'green', content: 'This is error event.' },
         ];
         break;
       case 15:
         listData = [
-          { type: 'green', content: 'This is warning event' },
+          { id: 6, type: 'green', content: 'This is warning event' },
         ];
         break;
       default:
@@ -40,7 +40,7 @@ function CalendarPage() {
     return (
       <div className={styles.day_events}>
         {listData.map(item => (
-          <span style={{ background: item.type}} className={styles.event}></span>
+          <span key={item.id} style={{ background: item.type}} className={styles.event}></span>
         ))}
       </div>
     );
@@ -56,7 +56,7 @@ function CalendarPage() {
       <main className={styles.main}>
         <div className={styles.calendar_card}>
           <Calendar dateCellRender={dateCellRender} fullscreen={false} onChange={onChange} />
-        </div>,
+        </div>
       </main>
     </div>
   )
