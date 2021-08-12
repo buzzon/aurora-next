@@ -1,12 +1,12 @@
 import Head from 'next/head'
 import styles from '../../styles/Calendar.module.css'
-import { Calendar, Badge } from 'antd';
-
+import { Calendar } from 'antd';
 
 function CalendarPage() {
 
   function onChange(value) {
     console.log(value._d);
+    console.log(value);
   }
 
   function getListData(value) {
@@ -40,7 +40,7 @@ function CalendarPage() {
     return (
       <div className={styles.day_events}>
         {listData.map(item => (
-          <span key={item.id} style={{ background: item.type}} className={styles.event}></span>
+          <span key={item.id} style={{ background: item.type }} className={styles.event}></span>
         ))}
       </div>
     );
