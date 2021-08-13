@@ -2,7 +2,7 @@ function Events({events}) {
     return(
         <ul>
             {events.map((event) => (
-                <li key={event.id}>{event.description} {event.date} {event.label} {event.owner}</li>
+                <li key={event.id}>{event.description} {event.date} {event.label.title} {event.label.color} {event.owner}</li>
             ))}
         </ul>
     )

@@ -1,46 +1,64 @@
 import Head from 'next/head'
 import styles from '../../styles/Calendar.module.css'
-import { Calendar } from 'antd';
+import { Calendar, Tag } from 'antd';
+import { useRouter } from 'next/router'
 
-function CalendarPage() {
+function eventsToMap(events){
+  const map = new Map()
+  events.forEach(element => {
+    if (map.has(element.date)){
+      map.get(element.date).push(element)
+    }
+    else
+      map.set(element.date, [element])
+  })
+  return map
+}
 
-  function onChange(value) {
-    console.log(value._d);
-    console.log(value);
+function formatDate(d){
+  var dd = d.getDate();
+  if (dd < 10) dd = '0' + dd;
+  var mm = d.getMonth() + 1;
+  if (mm < 10) mm = '0' + mm;
+  var yyyy = d.getFullYear();
+  return `${yyyy}-${mm}-${dd}`
+}
+
+function getLabels(events){
+  var labels = []
+  events.forEach(event => {
+    let contains = false
+    labels.forEach(label => {
+      contains ||= label.id == event.label.id
+    })
+    if(!contains) 
+      labels.push(event.label)
+  })
+  return labels
+}
+
+function CalendarPage({ events }) {
+  const router = useRouter()
+
+  const refreshData = () => {
+    console.log('refreshData')
+    router.reload(window.location.pathname)
   }
 
-  function getListData(value) {
-    let listData;
-    switch (value.date()) {
-      case 8:
-        listData = [
-          { id: 1, type: 'orange', content: 'This is warning event.' },
-          { id: 2, type: 'blue', content: 'This is usual event.' },
-        ];
-        break;
-      case 10:
-        listData = [
-          { id: 3, type: 'blue', content: 'This is warning event.' },
-          { id: 4, type: 'orange', content: 'This is usual event.' },
-          { id: 5, type: 'green', content: 'This is error event.' },
-        ];
-        break;
-      case 15:
-        listData = [
-          { id: 6, type: 'green', content: 'This is warning event' },
-        ];
-        break;
-      default:
-    }
-    return listData || [];
+
+  const map = eventsToMap(events)
+  
+  async function onPanelChange(value) {
+    events = []
+    refreshData()
   }
 
   function dateCellRender(value) {
-    const listData = getListData(value);
+    const events = map.get(formatDate(value._d)) || []
     return (
       <div className={styles.day_events}>
-        {listData.map(item => (
-          <span key={item.id} style={{ background: item.type }} className={styles.event}></span>
+        {events.map(event => (
+          <span key={event.id} style={{ background: event.label.color }} className={styles.event}></span>
         ))}
       </div>
     );
@@ -55,11 +73,30 @@ function CalendarPage() {
 
       <main className={styles.main}>
         <div className={styles.calendar_card}>
-          <Calendar dateCellRender={dateCellRender} fullscreen={false} onChange={onChange} />
+          <Calendar dateCellRender={dateCellRender} fullscreen={false} onPanelChange={onPanelChange} />
+        </div>
+        <div>
+          {getLabels(events).map(label =>(
+            <Tag key={label.id} color={label.color}>{label.title}</Tag>
+          ))}
         </div>
       </main>
     </div>
   )
+}
+
+export async function getStaticProps(){
+  const myHeaders = new Headers();
+  myHeaders.append('Content-Type', 'application/json');
+  myHeaders.append('Authorization', 'Token 8da30d43c7a6553d874bf9e9af8e39ddb99011f6');
+
+  const response_events = await fetch('http://127.0.0.1:8000/schedule/api/events/', {
+    method: 'GET',    
+    headers: myHeaders
+  })
+
+  const events = await response_events.json()
+  return { props: { events } }
 }
 
 export default CalendarPage
