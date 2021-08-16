@@ -3,6 +3,21 @@ import styles from '../../styles/Calendar.module.css'
 import { Calendar, Tag } from 'antd';
 import { useRouter } from 'next/router'
 
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+          }
+      }
+  }
+  return cookieValue;
+}
+
 function eventsToMap(events){
   const map = new Map()
   events.forEach(element => {
@@ -88,7 +103,7 @@ function CalendarPage({ events }) {
 export async function getStaticProps(){
   const myHeaders = new Headers();
   myHeaders.append('Content-Type', 'application/json');
-  myHeaders.append('Authorization', 'Token 8da30d43c7a6553d874bf9e9af8e39ddb99011f6');
+  myHeaders.append('Authorization', getCookie('Token'));
 
   const response_events = await fetch('http://127.0.0.1:8000/schedule/api/events/', {
     method: 'GET',    
