@@ -2,35 +2,16 @@ import Head from 'next/head'
 import styles from '../../styles/Calendar.module.css'
 import { Calendar, Tag } from 'antd';
 import { useRouter } from 'next/router'
+import cookieCutter from 'cookie-cutter'
+import React, { useState, useEffect } from 'react';
 
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-      const cookies = document.cookie.split(';');
-      for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i].trim();
-          if (cookie.substring(0, name.length + 1) === (name + '=')) {
-              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-              break;
-          }
-      }
-  }
-  return cookieValue;
+function eventsContainDate(events, date){
+  let contain = false
+  events.forEach(element => contain = contain || element.date == formatDate(date))
+  return contain
 }
 
-function eventsToMap(events){
-  const map = new Map()
-  events.forEach(element => {
-    if (map.has(element.date)){
-      map.get(element.date).push(element)
-    }
-    else
-      map.set(element.date, [element])
-  })
-  return map
-}
-
-function formatDate(d){
+function formatDate(d) {
   var dd = d.getDate();
   if (dd < 10) dd = '0' + dd;
   var mm = d.getMonth() + 1;
@@ -39,37 +20,43 @@ function formatDate(d){
   return `${yyyy}-${mm}-${dd}`
 }
 
-function getLabels(events){
+function getLabels(events) {
   var labels = []
   events.forEach(event => {
     let contains = false
     labels.forEach(label => {
       contains ||= label.id == event.label.id
     })
-    if(!contains) 
+    if (!contains)
       labels.push(event.label)
   })
   return labels
 }
 
-function CalendarPage({ events }) {
-  const router = useRouter()
+function CalendarPage() {
 
-  const refreshData = () => {
-    console.log('refreshData')
-    router.reload(window.location.pathname)
-  }
+  const [events, setEvents] = useState([])
 
+  useEffect(() => {
+    fetch('http://127.0.0.1:8000/schedule/api/events/', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `token ${cookieCutter.get('Token')}`
+      },
+    })
+      .then(res => res.json())
+      .then(data => { setEvents(data); console.log(data) })
+  }, [])
 
-  const map = eventsToMap(events)
-  
+  if (!events) return <Spinner />
+
   async function onPanelChange(value) {
-    events = []
-    refreshData()
+    console.log('onPanelChange')
   }
 
   function dateCellRender(value) {
-    const events = map.get(formatDate(value._d)) || []
+    if(!eventsContainDate(events, value._d)) return
     return (
       <div className={styles.day_events}>
         {events.map(event => (
@@ -91,7 +78,7 @@ function CalendarPage({ events }) {
           <Calendar dateCellRender={dateCellRender} fullscreen={false} onPanelChange={onPanelChange} />
         </div>
         <div>
-          {getLabels(events).map(label =>(
+          {getLabels(events).map(label => (
             <Tag key={label.id} color={label.color}>{label.title}</Tag>
           ))}
         </div>
@@ -100,18 +87,60 @@ function CalendarPage({ events }) {
   )
 }
 
-export async function getStaticProps(){
-  const myHeaders = new Headers();
-  myHeaders.append('Content-Type', 'application/json');
-  myHeaders.append('Authorization', getCookie('Token'));
+// function CalendarPage() {
+//   const router = useRouter()
+//   const { events, eventsError } = useSWR('http://127.0.0.1:8000/schedule/api/events/', fetcher)
 
-  const response_events = await fetch('http://127.0.0.1:8000/schedule/api/events/', {
-    method: 'GET',    
-    headers: myHeaders
+//   const refreshData = () => {
+//     console.log('refreshData')
+//     router.reload(window.location.pathname)
+//   }
+
+
+//   const map = eventsToMap(events)
+
+
+
+
+//   return (
+//     <div className={styles.container}>
+//       <Head>
+//         <title>Aurora calendar</title>
+//         <link rel="icon" href="/favicon.ico" />
+//       </Head>
+
+//       <main className={styles.main}>
+//         <div className={styles.calendar_card}>
+//           <Calendar dateCellRender={dateCellRender} fullscreen={false} onPanelChange={onPanelChange} />
+//         </div>
+//         <div>
+//           {getLabels(events).map(label =>(
+//             <Tag key={label.id} color={label.color}>{label.title}</Tag>
+//           ))}
+//         </div>
+//       </main>
+//     </div>
+//   )
+// }
+
+async function fetcher(key) {
+  const res = await fetch(key, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `token ${cookieCutter.get('Token')}`
+    },
   })
+  const data = await res.json()
 
-  const events = await response_events.json()
-  return { props: { events } }
+  if (!data) {
+    return {
+      notFound: true,
+    }
+  }
+
+  return { data }
 }
+
 
 export default CalendarPage

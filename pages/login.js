@@ -1,16 +1,16 @@
 import Head from 'next/head'
 import { Typography, Form, Card, Input, Button, Space } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
-import styles from '../../styles/Auth.module.css'
-import login from '../../logic/auth'
+import styles from '../styles/Auth.module.css'
+import login from '../logic/auth'
+import Router from "next/router";
 
 export default function Home() {
     const { Title, Text, Link } = Typography;
 
     const onFinish = async (user) => {
-        let token = await login(user);
-
-        console.log(token)
+        await login(user);
+        Router.push('/calendar');
     };
 
     return (
