@@ -1,11 +1,14 @@
 import Head from 'next/head'
 import styles from '../../styles/Calendar.module.css'
-import { Calendar, Tag } from 'antd';
-import { useRouter } from 'next/router'
+import { Form, Input, Button, Calendar, Modal, Tag, Space, InputNumber } from 'antd';
 import cookieCutter from 'cookie-cutter'
-import React, { useState, useEffect } from 'react';
+import { ChromePicker } from 'react-color';
+import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 
-function eventsContainDate(events, date){
+import React, { useState, useEffect, useRef } from 'react';
+import { SmileOutlined, UserOutlined } from '@ant-design/icons';
+
+function eventsContainDate(events, date) {
   let contain = false
   events.forEach(element => contain = contain || element.date == formatDate(date))
   return contain
@@ -36,6 +39,8 @@ function getLabels(events) {
 function CalendarPage() {
 
   const [events, setEvents] = useState([])
+  const [isNeedRerende, setIsNeedRerende] = useState(Math.random())
+  const reRender = () => setIsNeedRerende(Math.random())
 
   useEffect(() => {
     fetch('http://127.0.0.1:8000/schedule/api/events/', {
@@ -46,101 +51,114 @@ function CalendarPage() {
       },
     })
       .then(res => res.json())
-      .then(data => { setEvents(data); console.log(data) })
-  }, [])
+      .then(data => setEvents(data))
+  }, [isNeedRerende])
 
   if (!events) return <Spinner />
 
-  async function onPanelChange(value) {
-    console.log('onPanelChange')
-  }
-
   function dateCellRender(value) {
-    if(!eventsContainDate(events, value._d)) return
     return (
       <div className={styles.day_events}>
-        {events.map(event => (
-          <span key={event.id} style={{ background: event.label.color }} className={styles.event}></span>
-        ))}
+        {(eventsContainDate(events, value._d)) ? events.map(event => (
+          <span key={event.id} style={{ background: event.label.color }} className={styles.event} />
+        )) : ""}
       </div>
     );
   }
 
-  return (
-    <div className={styles.container}>
-      <Head>
-        <title>Aurora calendar</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+  const useResetFormOnCloseModal = ({ form, visible }) => {
+    const prevVisibleRef = useRef();
+    useEffect(() => {
+      prevVisibleRef.current = visible;
+    }, [visible]);
+    const prevVisible = prevVisibleRef.current;
+    useEffect(() => {
+      if (!visible && prevVisible) {
+        form.resetFields();
+      }
+    }, [visible]);
+  };
 
-      <main className={styles.main}>
-        <div className={styles.calendar_card}>
-          <Calendar dateCellRender={dateCellRender} fullscreen={false} onPanelChange={onPanelChange} />
-        </div>
-        <div>
-          {getLabels(events).map(label => (
-            <Tag key={label.id} color={label.color}>{label.title}</Tag>
-          ))}
-        </div>
-      </main>
-    </div>
-  )
-}
+  const ModalForm = ({ visible, onCancel }) => {
+    const [form] = Form.useForm();
+    useResetFormOnCloseModal({
+      form,
+      visible,
+    });
+  
+    const onOk = () => {
+      form.submit()
+        // hideUserModal()
+    };
+  
+    return (
+      <Modal title="Basic Drawer" visible={visible} onOk={onOk} onCancel={onCancel}>
+        <Form form={form} layout="vertical" name="userForm">
+          <Form.Item
+            name="name"
+            label="User Name"
+            rules={[
+              {
+                required: true,
+              },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="age"
+            label="User Age"
+            rules={[
+              {
+                required: true,
+              },
+            ]}
+          >
+            <InputNumber />
+          </Form.Item>
+        </Form>
+      </Modal>
+    );
+  };
 
-// function CalendarPage() {
-//   const router = useRouter()
-//   const { events, eventsError } = useSWR('http://127.0.0.1:8000/schedule/api/events/', fetcher)
-
-//   const refreshData = () => {
-//     console.log('refreshData')
-//     router.reload(window.location.pathname)
-//   }
-
-
-//   const map = eventsToMap(events)
-
-
-
-
-//   return (
-//     <div className={styles.container}>
-//       <Head>
-//         <title>Aurora calendar</title>
-//         <link rel="icon" href="/favicon.ico" />
-//       </Head>
-
-//       <main className={styles.main}>
-//         <div className={styles.calendar_card}>
-//           <Calendar dateCellRender={dateCellRender} fullscreen={false} onPanelChange={onPanelChange} />
-//         </div>
-//         <div>
-//           {getLabels(events).map(label =>(
-//             <Tag key={label.id} color={label.color}>{label.title}</Tag>
-//           ))}
-//         </div>
-//       </main>
-//     </div>
-//   )
-// }
-
-async function fetcher(key) {
-  const res = await fetch(key, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `token ${cookieCutter.get('Token')}`
-    },
-  })
-  const data = await res.json()
-
-  if (!data) {
-    return {
-      notFound: true,
-    }
+  function onSelect(value) {
+    showUserModal()
+    // setModalTitle(value.format('D MMM'))
   }
 
-  return { data }
-}
+  const [visible, setVisible] = useState(false);
+const showUserModal = () => {
+    setVisible(true);
+  };
 
+  const hideUserModal = () => {
+    setVisible(false);
+  };
+
+
+  return (
+    <>
+      <div className={styles.container}>
+        <Head>
+          <title>Aurora calendar</title>
+          <link rel="icon" href="/favicon.ico" />
+        </Head>
+        <main className={styles.main}>
+          <div className={styles.calendar_card}>
+            <Calendar dateCellRender={dateCellRender} fullscreen={false} onPanelChange={reRender} onSelect={onSelect} />
+          </div>
+          <br/>
+          <div>
+            {getLabels(events).map(label => (
+              <Tag key={label.id} color={label.color}>{label.title}</Tag>
+            ))}
+          </div>
+        </main>
+      </div>
+
+      <ModalForm visible={visible} onCancel={hideUserModal} />
+    </>
+  )
+}
 
 export default CalendarPage
