@@ -1,7 +1,8 @@
 import Head from 'next/head'
 import styles from '../../styles/Calendar.module.css'
-import { Calendar, Tag } from 'antd';
+import { Calendar, Tag, Modal, Form, Input, Radio } from 'antd';
 import cookieCutter from 'cookie-cutter'
+import moment from 'moment';
 
 import React, { useState, useEffect } from 'react';
 
@@ -39,13 +40,68 @@ function getLabels(events) {
   return labels
 }
 
+const EventsCreateForm = ({ visible, curentMoment, onCreate, onCancel }) => {
+  const [form] = Form.useForm();
+  return (
+    <Modal
+      visible={visible}
+      title={curentMoment.format("LL")}
+      okText="Create"
+      cancelText="Cancel"
+      onCancel={onCancel}
+      onOk={() => {
+        form
+          .validateFields()
+          .then((values) => {
+            form.resetFields();
+            onCreate(values);
+          })
+          .catch((info) => {
+            console.warn('Validate Failed:', info);
+          });
+      }}
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        name="form_in_modal"
+        initialValues={{
+          modifier: 'public',
+        }}
+      >
+        <Form.Item
+          name="title"
+          label="Title"
+          rules={[
+            {
+              required: true,
+              message: 'Please input the title of collection!',
+            },
+          ]}
+        >
+          <Input />
+        </Form.Item>
+        <Form.Item name="description" label="Description">
+          <Input type="textarea" />
+        </Form.Item>
+        <Form.Item name="modifier" className="collection-create-form_last-form-item">
+          <Radio.Group>
+            <Radio value="public">Public</Radio>
+            <Radio value="private">Private</Radio>
+          </Radio.Group>
+        </Form.Item>
+      </Form>
+    </Modal>
+  );
+};
+
 function CalendarPage() {
-
-  const [events, setEvents] = useState(new Map())
+  const [curentMoment, setMoment] = useState(moment())
   const [labels, setLabels] = useState([])
+  const [visible, setVisible] = useState(false)
+  const [events, setEvents] = useState(new Map())
   const [isNeedRerende, setIsNeedRerende] = useState(Math.random())
-  const reRender = () => setIsNeedRerende(Math.random())
-
+  
   useEffect(() => {
     fetch('http://127.0.0.1:8000/schedule/api/events/', {
       method: 'GET',
@@ -54,12 +110,14 @@ function CalendarPage() {
         'Authorization': `token ${cookieCutter.get('Token')}`
       },
     })
-      .then(res => res.json())
-      .then(data => { setEvents(eventsToMap(data)); setLabels(getLabels(data))})
+    .then(res => res.json())
+    .then(data => { setEvents(eventsToMap(data)); setLabels(getLabels(data))})
   }, [isNeedRerende])
-
+  
   if (!events) return <Spinner />
-
+  
+  const reRender = () => setIsNeedRerende(Math.random())
+  
   function dateCellRender(value) {
     let curent_events = events.get(formatDate(value._d)) || [] 
 
@@ -73,8 +131,14 @@ function CalendarPage() {
   }
 
   function onSelect(value){
-    console.log(value)
+    setMoment(value)
+    setVisible(true)
   }
+
+  const onCreate = (values) => {
+    console.log('Received values of form: ', values);
+    setVisible(false);
+  };
 
   return (
     <>
@@ -95,6 +159,14 @@ function CalendarPage() {
           </div>
         </main>
       </div>
+      <EventsCreateForm
+        visible={visible}
+        curentMoment={curentMoment}
+        onCreate={onCreate}
+        onCancel={() => {
+          setVisible(false);
+        }}
+      />
     </>
   )
 }
