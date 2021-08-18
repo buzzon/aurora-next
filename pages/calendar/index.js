@@ -1,17 +1,20 @@
 import Head from 'next/head'
 import styles from '../../styles/Calendar.module.css'
-import { Form, Input, Button, Calendar, Modal, Tag, Space, InputNumber } from 'antd';
+import { Calendar, Tag } from 'antd';
 import cookieCutter from 'cookie-cutter'
-import { ChromePicker } from 'react-color';
-import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { SmileOutlined, UserOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
 
-function eventsContainDate(events, date) {
-  let contain = false
-  events.forEach(element => contain = contain || element.date == formatDate(date))
-  return contain
+function eventsToMap(events){
+  const map = new Map()
+  events.forEach(element => {
+    if (map.has(element.date)){
+      map.get(element.date).push(element)
+    }
+    else
+      map.set(element.date, [element])
+  })
+  return map
 }
 
 function formatDate(d) {
@@ -38,7 +41,8 @@ function getLabels(events) {
 
 function CalendarPage() {
 
-  const [events, setEvents] = useState([])
+  const [events, setEvents] = useState(new Map())
+  const [labels, setLabels] = useState([])
   const [isNeedRerende, setIsNeedRerende] = useState(Math.random())
   const reRender = () => setIsNeedRerende(Math.random())
 
@@ -51,90 +55,26 @@ function CalendarPage() {
       },
     })
       .then(res => res.json())
-      .then(data => setEvents(data))
+      .then(data => { setEvents(eventsToMap(data)); setLabels(getLabels(data))})
   }, [isNeedRerende])
 
   if (!events) return <Spinner />
 
   function dateCellRender(value) {
+    let curent_events = events.get(formatDate(value._d)) || [] 
+
     return (
       <div className={styles.day_events}>
-        {(eventsContainDate(events, value._d)) ? events.map(event => (
+        { curent_events.map(event => (
           <span key={event.id} style={{ background: event.label.color }} className={styles.event} />
-        )) : ""}
+        )) }
       </div>
     );
   }
 
-  const useResetFormOnCloseModal = ({ form, visible }) => {
-    const prevVisibleRef = useRef();
-    useEffect(() => {
-      prevVisibleRef.current = visible;
-    }, [visible]);
-    const prevVisible = prevVisibleRef.current;
-    useEffect(() => {
-      if (!visible && prevVisible) {
-        form.resetFields();
-      }
-    }, [visible]);
-  };
-
-  const ModalForm = ({ visible, onCancel }) => {
-    const [form] = Form.useForm();
-    useResetFormOnCloseModal({
-      form,
-      visible,
-    });
-  
-    const onOk = () => {
-      form.submit()
-        // hideUserModal()
-    };
-  
-    return (
-      <Modal title="Basic Drawer" visible={visible} onOk={onOk} onCancel={onCancel}>
-        <Form form={form} layout="vertical" name="userForm">
-          <Form.Item
-            name="name"
-            label="User Name"
-            rules={[
-              {
-                required: true,
-              },
-            ]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="age"
-            label="User Age"
-            rules={[
-              {
-                required: true,
-              },
-            ]}
-          >
-            <InputNumber />
-          </Form.Item>
-        </Form>
-      </Modal>
-    );
-  };
-
-  function onSelect(value) {
-    showUserModal()
-    // setModalTitle(value.format('D MMM'))
+  function onSelect(value){
+    console.log(value)
   }
-
-  const [visible, setVisible] = useState(false);
-const showUserModal = () => {
-    setVisible(true);
-  };
-
-  const hideUserModal = () => {
-    setVisible(false);
-  };
-
 
   return (
     <>
@@ -149,14 +89,12 @@ const showUserModal = () => {
           </div>
           <br/>
           <div>
-            {getLabels(events).map(label => (
+            {labels.map(label => (
               <Tag key={label.id} color={label.color}>{label.title}</Tag>
             ))}
           </div>
         </main>
       </div>
-
-      <ModalForm visible={visible} onCancel={hideUserModal} />
     </>
   )
 }
