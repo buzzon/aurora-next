@@ -1,6 +1,7 @@
 import Head from 'next/head'
 import styles from '../../styles/Calendar.module.css'
-import { Calendar, Tag, Modal, Form, Input, Radio } from 'antd';
+import { Calendar, Tag, Modal, Form, Input, Radio, Button, Space  } from 'antd';
+import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import cookieCutter from 'cookie-cutter'
 import moment from 'moment';
 
@@ -40,13 +41,14 @@ function getLabels(events) {
   return labels
 }
 
-const EventsCreateForm = ({ visible, curentMoment, onCreate, onCancel }) => {
+const EventsCreateForm = ({ visible, curentMoment, events, onFinish, onCancel }) => {
   const [form] = Form.useForm();
+  const { TextArea } = Input;
   return (
     <Modal
       visible={visible}
       title={curentMoment.format("LL")}
-      okText="Create"
+      okText="Save"
       cancelText="Cancel"
       onCancel={onCancel}
       onOk={() => {
@@ -54,7 +56,7 @@ const EventsCreateForm = ({ visible, curentMoment, onCreate, onCancel }) => {
           .validateFields()
           .then((values) => {
             form.resetFields();
-            onCreate(values);
+            onFinish(values);
           })
           .catch((info) => {
             console.warn('Validate Failed:', info);
@@ -65,31 +67,46 @@ const EventsCreateForm = ({ visible, curentMoment, onCreate, onCancel }) => {
         form={form}
         layout="vertical"
         name="form_in_modal"
-        initialValues={{
-          modifier: 'public',
-        }}
       >
-        <Form.Item
-          name="title"
-          label="Title"
-          rules={[
-            {
-              required: true,
-              message: 'Please input the title of collection!',
-            },
-          ]}
-        >
-          <Input />
-        </Form.Item>
-        <Form.Item name="description" label="Description">
-          <Input type="textarea" />
-        </Form.Item>
-        <Form.Item name="modifier" className="collection-create-form_last-form-item">
-          <Radio.Group>
-            <Radio value="public">Public</Radio>
-            <Radio value="private">Private</Radio>
-          </Radio.Group>
-        </Form.Item>
+        <Form.List name="events">
+        {(events, { add, remove }) => (
+          <>
+            {events.map(({ key, name, fieldKey, ...restField }) => (
+              <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+                <Form.Item
+                  {...restField}
+                  name={[name, 'description']}
+                  rules={[{ message: 'Missing first name' }]}
+                >
+                  <TextArea placeholder="Description"  />
+                </Form.Item>
+                <Form.Item
+                  {...restField}
+                  name={[name, 'first']}
+                  fieldKey={[fieldKey, 'first']}
+                  rules={[{ required: true, message: 'Missing first name' }]}
+                >
+                  <Input placeholder="First Name" />
+                </Form.Item>
+                <Form.Item
+                  {...restField}
+                  name={[name, 'last']}
+                  fieldKey={[fieldKey, 'last']}
+                  rules={[{ required: true, message: 'Missing last name' }]}
+                >
+                  <Input placeholder="Last Name" />
+                </Form.Item>
+                <MinusCircleOutlined onClick={() => remove(name)} />
+              </Space>
+            ))}
+            <Form.Item>
+              <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                Add field
+              </Button>
+            </Form.Item>
+          </>
+        )}
+      </Form.List>
       </Form>
     </Modal>
   );
@@ -100,6 +117,7 @@ function CalendarPage() {
   const [labels, setLabels] = useState([])
   const [visible, setVisible] = useState(false)
   const [events, setEvents] = useState(new Map())
+  const [curent_events, setCeurentEvents] = useState([])
   const [isNeedRerende, setIsNeedRerende] = useState(Math.random())
   
   useEffect(() => {
@@ -132,11 +150,12 @@ function CalendarPage() {
 
   function onSelect(value){
     setMoment(value)
+    setCeurentEvents(events.get(formatDate(value._d)) || [] )
     setVisible(true)
   }
 
-  const onCreate = (values) => {
-    console.log('Received values of form: ', values);
+  const onFinish = (values) => {
+    console.log(values);
     setVisible(false);
   };
 
@@ -162,7 +181,8 @@ function CalendarPage() {
       <EventsCreateForm
         visible={visible}
         curentMoment={curentMoment}
-        onCreate={onCreate}
+        events={curent_events}
+        onFinish={onFinish}
         onCancel={() => {
           setVisible(false);
         }}
