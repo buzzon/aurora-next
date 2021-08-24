@@ -62,7 +62,6 @@ const EventsCreateForm = ({ visible, curentMoment, curent_events, onFinish, onCa
           .then((values) => {
             form.resetFields();
             onFinish(values);
-            console.log('values', values);
           })
           .catch((info) => {
             console.warn('Validate Failed:', info);
@@ -121,7 +120,7 @@ const EventsCreateForm = ({ visible, curentMoment, curent_events, onFinish, onCa
               ))}
               <Form.Item>
                 <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                  Add field
+                  Add event
                 </Button>
               </Form.Item>
             </>
@@ -175,6 +174,7 @@ function CalendarPage() {
   }
 
   const onFinish = (values) => {
+    console.log(values);
     setVisible(false);
   };
 
