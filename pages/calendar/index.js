@@ -41,8 +41,13 @@ function getLabels(events) {
   return labels
 }
 
-const EventsCreateForm = ({ visible, curentMoment, events, onFinish, onCancel }) => {
+const EventsCreateForm = ({ visible, curentMoment, curent_events, onFinish, onCancel }) => {
   const [form] = Form.useForm();
+  useEffect(() => { 
+    form.resetFields();
+    form.setFieldsValue(curent_events);
+  }, [form, curent_events])
+  
   const { TextArea } = Input;
   return (
     <Modal
@@ -67,6 +72,7 @@ const EventsCreateForm = ({ visible, curentMoment, events, onFinish, onCancel })
         form={form}
         layout="vertical"
         name="form_in_modal"
+        initialValues={{events: curent_events}}
       >
         <Form.List name="events">
         {(events, { add, remove }) => (
@@ -137,11 +143,9 @@ function CalendarPage() {
   const reRender = () => setIsNeedRerende(Math.random())
   
   function dateCellRender(value) {
-    let curent_events = events.get(formatDate(value._d)) || [] 
-
     return (
       <div className={styles.day_events}>
-        { curent_events.map(event => (
+        { (events.get(formatDate(value._d)) || [] ).map(event => (
           <span key={event.id} style={{ background: event.label.color }} className={styles.event} />
         )) }
       </div>
@@ -149,13 +153,14 @@ function CalendarPage() {
   }
 
   function onSelect(value){
+    if (value.format("MMM-YY") == curentMoment.format("MMM-YY")){
+      setCeurentEvents(events.get(formatDate(value._d)) || [] )
+      setVisible(true)
+    }
     setMoment(value)
-    setCeurentEvents(events.get(formatDate(value._d)) || [] )
-    setVisible(true)
   }
 
   const onFinish = (values) => {
-    console.log(values);
     setVisible(false);
   };
 
@@ -181,7 +186,7 @@ function CalendarPage() {
       <EventsCreateForm
         visible={visible}
         curentMoment={curentMoment}
-        events={curent_events}
+        curent_events={curent_events}
         onFinish={onFinish}
         onCancel={() => {
           setVisible(false);
