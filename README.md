@@ -46,3 +46,6 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/deploym
 
 1 event manager(4), get local coord (3)
 2 get local coord (1)
+
+
+ss
