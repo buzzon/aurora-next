@@ -19,7 +19,7 @@
     "graphql": "^15.5.1",
     "micro": "^9.3.4",
     "moment": "^2.29.1",
-    "next": "11.1.0",
+    "next": "12.1.0",
     "next-graphql-react": "^11.0.0",
     "react": "17.0.2",
     "react-color": "^2.19.3",
